@@ -401,10 +401,6 @@ contains
        call datm_datamode_simple_advertise(exportState, fldsExport, flds_scalar_name, &
             nlfilename, my_task, vm, rc)
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    case ('SIMPLE')
-       call datm_datamode_simple_advertise(exportState, fldsExport, flds_scalar_name, &
-            nlfilename, my_task, vm, rc)
-       if (ChkErr(rc,__LINE__,u_FILE_u)) return
     end select
 
   end subroutine InitializeAdvertise
@@ -648,9 +644,6 @@ contains
        case('SIMPLE')
           call datm_datamode_simple_init_pointers(exportState, sdat, rc)
           if (ChkErr(rc,__LINE__,u_FILE_u)) return
-       case('SIMPLE')
-          call datm_datamode_simple_init_pointers(exportState, sdat, rc)
-          if (ChkErr(rc,__LINE__,u_FILE_u)) return
        end select
 
        ! Read restart if needed
@@ -720,10 +713,6 @@ contains
     case('GEFS')
        call datm_datamode_gefs_advance(exportstate, mainproc, logunit, mpicom, target_ymd, &
             target_tod, sdat%model_calendar, rc)
-       if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    case('SIMPLE')
-       call datm_datamode_simple_advance(target_ymd, target_tod, target_mon, &
-            sdat%model_calendar, rc)
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
     case('SIMPLE')
        call datm_datamode_simple_advance(target_ymd, target_tod, target_mon, &
