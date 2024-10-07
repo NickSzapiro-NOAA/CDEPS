@@ -29,7 +29,7 @@ module cdeps_datm_comp
   use shr_const_mod    , only : shr_const_cday
   use shr_sys_mod      , only : shr_sys_abort
   use shr_cal_mod      , only : shr_cal_ymd2date
-  use shr_log_mod     , only : shr_log_setLogUnit
+  use shr_log_mod      , only : shr_log_setLogUnit
   use dshr_methods_mod , only : dshr_state_diagnose, chkerr, memcheck
   use dshr_strdata_mod , only : shr_strdata_type, shr_strdata_init_from_config, shr_strdata_advance
   use dshr_strdata_mod , only : shr_strdata_get_stream_pointer, shr_strdata_setOrbs
@@ -76,6 +76,12 @@ module cdeps_datm_comp
   use datm_datamode_gefs_mod    , only : datm_datamode_gefs_restart_write
   use datm_datamode_gefs_mod    , only : datm_datamode_gefs_restart_read
   
+  use datm_datamode_simple_mod  , only : datm_datamode_simple_advertise
+  use datm_datamode_simple_mod  , only : datm_datamode_simple_init_pointers
+  use datm_datamode_simple_mod  , only : datm_datamode_simple_advance
+  use datm_datamode_simple_mod  , only : datm_datamode_simple_restart_write
+  use datm_datamode_simple_mod  , only : datm_datamode_simple_restart_read
+
   use datm_datamode_simple_mod  , only : datm_datamode_simple_advertise
   use datm_datamode_simple_mod  , only : datm_datamode_simple_init_pointers
   use datm_datamode_simple_mod  , only : datm_datamode_simple_advance
@@ -264,7 +270,7 @@ contains
 
     ! Obtain flds_scalar values, mpi values, multi-instance values and
     ! set logunit and set shr logging to my log file
-    call dshr_init(gcomp, 'ATM', sdat, mpicom, my_task, inst_index, inst_suffix, &
+    call dshr_init(gcomp, 'ATM', mpicom, my_task, inst_index, inst_suffix, &
          flds_scalar_name, flds_scalar_num, flds_scalar_index_nx, flds_scalar_index_ny, &
          logunit, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
@@ -390,6 +396,10 @@ contains
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
     case ('GEFS')
        call datm_datamode_gefs_advertise(exportState, fldsExport, flds_scalar_name, rc)
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    case ('SIMPLE')
+       call datm_datamode_simple_advertise(exportState, fldsExport, flds_scalar_name, &
+            nlfilename, my_task, vm, rc)
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
     case ('SIMPLE')
        call datm_datamode_simple_advertise(exportState, fldsExport, flds_scalar_name, &
@@ -638,6 +648,9 @@ contains
        case('SIMPLE')
           call datm_datamode_simple_init_pointers(exportState, sdat, rc)
           if (ChkErr(rc,__LINE__,u_FILE_u)) return
+       case('SIMPLE')
+          call datm_datamode_simple_init_pointers(exportState, sdat, rc)
+          if (ChkErr(rc,__LINE__,u_FILE_u)) return
        end select
 
        ! Read restart if needed
@@ -712,6 +725,10 @@ contains
        call datm_datamode_simple_advance(target_ymd, target_tod, target_mon, &
             sdat%model_calendar, rc)
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    case('SIMPLE')
+       call datm_datamode_simple_advance(target_ymd, target_tod, target_mon, &
+            sdat%model_calendar, rc)
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
     end select
 
     ! Write restarts if needed
@@ -739,6 +756,7 @@ contains
        case('SIMPLE')
           call datm_datamode_simple_restart_write(case_name, inst_suffix, target_ymd, target_tod, &
                logunit, my_task, sdat)
+          if (ChkErr(rc,__LINE__,u_FILE_u)) return
        end select
     end if
 
