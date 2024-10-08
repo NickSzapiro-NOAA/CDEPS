@@ -82,18 +82,6 @@ module cdeps_datm_comp
   use datm_datamode_simple_mod  , only : datm_datamode_simple_restart_write
   use datm_datamode_simple_mod  , only : datm_datamode_simple_restart_read
 
-  use datm_datamode_simple_mod  , only : datm_datamode_simple_advertise
-  use datm_datamode_simple_mod  , only : datm_datamode_simple_init_pointers
-  use datm_datamode_simple_mod  , only : datm_datamode_simple_advance
-  use datm_datamode_simple_mod  , only : datm_datamode_simple_restart_write
-  use datm_datamode_simple_mod  , only : datm_datamode_simple_restart_read
-
-  use datm_datamode_simple_mod  , only : datm_datamode_simple_advertise
-  use datm_datamode_simple_mod  , only : datm_datamode_simple_init_pointers
-  use datm_datamode_simple_mod  , only : datm_datamode_simple_advance
-  use datm_datamode_simple_mod  , only : datm_datamode_simple_restart_write
-  use datm_datamode_simple_mod  , only : datm_datamode_simple_restart_read
-
   implicit none
   private ! except
 
