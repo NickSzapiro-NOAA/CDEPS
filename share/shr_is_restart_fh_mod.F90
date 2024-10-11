@@ -1,12 +1,14 @@
 module shr_is_restart_fh_mod
 
   ! Common methods for components to check if it's time to write forecast hour-based restarts
-  
+
+  use dshr_methods_mod , only : chkerr
+
   implicit none
   private
   save
 
-  public :: init_is_restart_fh, is_restart_fh
+  public :: init_is_restart_fh, is_restart_fh, finalize_restart_fh
   
   logical :: write_restartfh = .false.
   type(ESMF_Time), allocatable :: restartFhTimes(:)
@@ -30,7 +32,7 @@ contains
     !
     ! !LOCAL VARIABLES:
     character(len=256)           :: timestr
-    integer                      :: nfh, fh_s
+    integer                      :: nfh, fh_s, rc
     real(kind=ESMF_KIND_R8), allocatable :: restart_fh(:)
     type(ESMF_TimeInterval)      :: fhInterval
     type(ESMF_Config)            :: CF_mc
@@ -63,9 +65,9 @@ contains
           if (ChkErr(rc,__LINE__,u_FILE_u)) return
           if (lLog) then
             if (mod(fh_s,dtime) /= 0) then
-              call ESMF_LogWrite('restart_fh will not be written at ''//trim(timestr), ESMF_LOGMSG_INFO)
+              call ESMF_LogWrite('restart_fh NOT to be written at ''//trim(timestr), ESMF_LOGMSG_INFO)
             else
-              call ESMF_LogWrite('restart_fh will be written at ''//trim(timestr), ESMF_LOGMSG_INFO)
+              call ESMF_LogWrite('restart_fh to be written at ''//trim(timestr), ESMF_LOGMSG_INFO)
             end if
           end if
         end do
@@ -91,7 +93,7 @@ contains
     logical :: lWrite ! function result
     !
     ! !LOCAL VARIABLES:
-    integer                      :: nfh
+    integer                    :: nfh, rc
     type(ESMF_Time)            :: nextTime
     
     character(len=*), parameter :: subname = 'is_restart_fh'
@@ -110,5 +112,23 @@ contains
     lWrite = write_restartfh
     
   end function is_restart_fh
+
+  subroutine finalize_restart_fh()
+    !
+    ! !DESCRIPTION:
+    ! Clean-up...release allocated memory
+    !
+    ! !USES:
+    !
+    ! !ARGUMENTS:
+    !
+    ! !LOCAL VARIABLES:
+    
+    character(len=*), parameter :: subname = 'finalize_restart_fh'
+    !-----------------------------------------------------------------------
+
+    if (allocated(restartFhTimes)) deallocate(restartFhTimes)
+
+  end subroutine finalize_restart_fh
 
 end module shr_restart_fh_mod
