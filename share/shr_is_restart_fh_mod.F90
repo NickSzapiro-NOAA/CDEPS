@@ -12,6 +12,8 @@ module shr_is_restart_fh_mod
   
   logical :: write_restartfh = .false.
   type(ESMF_Time), allocatable :: restartFhTimes(:)
+!$OMP THREADPRIVATE (write_restartfh, restartFhTimes)
+
 contains
 
   !-----------------------------------------------------------------------
@@ -65,9 +67,9 @@ contains
           if (ChkErr(rc,__LINE__,u_FILE_u)) return
           if (lLog) then
             if (mod(fh_s,dtime) /= 0) then
-              call ESMF_LogWrite('restart_fh NOT to be written at ''//trim(timestr), ESMF_LOGMSG_INFO)
+              call ESMF_LogWrite('restart time NOT to be written for ''//trim(timestr), ESMF_LOGMSG_INFO)
             else
-              call ESMF_LogWrite('restart_fh to be written at ''//trim(timestr), ESMF_LOGMSG_INFO)
+              call ESMF_LogWrite('restart time to be written for ''//trim(timestr), ESMF_LOGMSG_INFO)
             end if
           end if
         end do
