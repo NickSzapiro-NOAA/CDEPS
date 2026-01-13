@@ -1,6 +1,8 @@
 module datm_datamode_gefs_mod
 
-  use ESMF             , only : ESMF_State, ESMF_SUCCESS, ESMF_LogWrite, ESMF_LOGMSG_INFO
+  use ESMF             , only : ESMF_SUCCESS, ESMF_LogWrite, ESMF_LOGMSG_INFO, ESMF_MAXSTR
+  use ESMF             , only : ESMF_State, ESMF_StateGet, ESMF_Field
+  use ESMF             , only : ESMF_TraceRegionEnter, ESMF_TraceRegionExit, ESMF_GridCompGet
   use NUOPC            , only : NUOPC_Advertise
   use shr_kind_mod     , only : r8=>shr_kind_r8, i8=>shr_kind_i8, cl=>shr_kind_cl, cs=>shr_kind_cs
   use shr_precip_mod   , only : shr_precip_partition_rain_snow_ramp
@@ -9,9 +11,10 @@ module datm_datamode_gefs_mod
   use dshr_strdata_mod , only : shr_strdata_type, shr_strdata_get_stream_pointer
   use dshr_strdata_mod , only : shr_strdata_type
   use dshr_fldlist_mod , only : fldlist_type, dshr_fldlist_add
+  use dshr_dfield_mod  , only : dfield_type, dshr_dfield_add, dshr_dfield_copy
 
   implicit none
-  private ! except
+  private
 
   public  :: datm_datamode_gefs_advertise
   public  :: datm_datamode_gefs_init_pointers
@@ -47,16 +50,17 @@ module datm_datamode_gefs_mod
   real(r8) , parameter :: rdair    = SHR_CONST_RDAIR ! dry air gas constant ~ J/K/kg
   real(r8) , parameter :: rhofw    = SHR_CONST_RHOFW ! density of fresh water ~ kg/m^3
 
-  character(*), parameter :: nullstr = 'undefined'
-  character(*), parameter :: u_FILE_u = &
+  type(dfield_type)  , pointer :: dfields    => null()
+
+  character(len=*), parameter :: nullstr = 'undefined'
+  character(len=*), parameter :: u_FILE_u = &
        __FILE__
 
 !===============================================================================
 contains
 !===============================================================================
 
-  subroutine datm_datamode_gefs_advertise(exportState, fldsexport, &
-       flds_scalar_name, rc)
+  subroutine datm_datamode_gefs_advertise(exportState, fldsexport, flds_scalar_name, rc)
 
     ! input/output variables
     type(esmf_State)   , intent(inout) :: exportState
@@ -101,18 +105,40 @@ contains
   end subroutine datm_datamode_gefs_advertise
 
   !===============================================================================
-  subroutine datm_datamode_gefs_init_pointers(exportState, sdat, rc)
+  subroutine datm_datamode_gefs_init_pointers(exportState, sdat, logunit, mainproc, rc)
 
     ! input/output variables
     type(ESMF_State)       , intent(inout) :: exportState
     type(shr_strdata_type) , intent(in)    :: sdat
+    integer                , intent(in)    :: logunit
+    logical                , intent(in)    :: mainproc
     integer                , intent(out)   :: rc
 
     ! local variables
+    integer                         :: n
+    integer                         :: fieldcount
+    type(ESMF_Field)                :: lfield
+    character(ESMF_MAXSTR) ,pointer :: lfieldnames(:)
     character(len=*), parameter :: subname='(datm_init_pointers): '
     !-------------------------------------------------------------------------------
 
     rc = ESMF_SUCCESS
+
+    ! Initialize dfields arrays for export fields with no ungridded dimension
+    ! and that have a corresponding stream field
+    call ESMF_StateGet(exportState, itemCount=fieldCount, rc=rc)
+    if (chkerr(rc,__LINE__,u_FILE_u)) return
+    allocate(lfieldnames(fieldCount))
+    call ESMF_StateGet(exportState, itemNameList=lfieldnames, rc=rc)
+    if (chkerr(rc,__LINE__,u_FILE_u)) return
+    do n = 1, fieldCount
+       call ESMF_LogWrite(subname//': field name = '//trim(lfieldnames(n)), ESMF_LOGMSG_INFO)
+       call ESMF_StateGet(exportState, itemName=trim(lfieldnames(n)), field=lfield, rc=rc)
+       if (chkerr(rc,__LINE__,u_FILE_u)) return
+       call dshr_dfield_add( dfields, sdat, trim(lfieldnames(n)), trim(lfieldnames(n)), &
+            exportState, logunit, mainproc, rc=rc)
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    end do
 
     ! initialize pointers for module level stream arrays
     call shr_strdata_get_stream_pointer( sdat, 'Sa_mask'   , strm_mask , rc)
@@ -159,16 +185,16 @@ contains
   end subroutine datm_datamode_gefs_init_pointers
 
   !===============================================================================
-  subroutine datm_datamode_gefs_advance(exportstate, mainproc, logunit, mpicom, target_ymd, target_tod, model_calendar, rc)
+  subroutine datm_datamode_gefs_advance(exportstate, sdat, mainproc, logunit, rc)
+
+
     use ESMF, only: ESMF_VMGetCurrent, ESMF_VMAllReduce, ESMF_REDUCE_MAX, ESMF_VM
+
     ! input/output variables
     type(ESMF_State)       , intent(inout) :: exportState
+    type(shr_strdata_type) , intent(in)    :: sdat
     logical                , intent(in)    :: mainproc
     integer                , intent(in)    :: logunit
-    integer                , intent(in)    :: mpicom
-    integer                , intent(in)    :: target_ymd
-    integer                , intent(in)    :: target_tod
-    character(len=*)       , intent(in)    :: model_calendar
     integer                , intent(out)   :: rc
 
     ! local variables
@@ -193,18 +219,25 @@ contains
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
        tbotmax = rtmp(2)
 
-       if (mainproc) write(logunit,*) trim(subname),' tbotmax = ',tbotmax
+       if (mainproc) write(logunit,*) subname,' tbotmax = ',tbotmax
 
        ! determine maskmax (see below for use)
        rtmp(1) = maxval(strm_mask(:))
        call ESMF_VMAllReduce(vm, rtmp, rtmp(2:), 1, ESMF_REDUCE_MAX, rc=rc)
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
        maskmax = rtmp(2)
-       if (mainproc) write(logunit,*) trim(subname),' maskmax = ',maskmax
+       if (mainproc) write(logunit,*) subname,' maskmax = ',maskmax
 
        ! reset first_time
        first_time = .false.
     end if
+
+    ! copy all fields from streams to export state as default
+    ! This automatically will update the fields in the export state
+    call ESMF_TraceRegionEnter('datm_gefs_dfield_copy')
+    call dshr_dfield_copy(dfields, sdat, rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call ESMF_TraceRegionExit('datm_gefs_dfield_copy')
 
     do n = 1, lsize
        !--- temperature ---
