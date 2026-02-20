@@ -380,7 +380,7 @@ contains
     integer  :: n                   ! indices
     integer  :: lsize = 0           ! size of attr vect
     real(r8) :: rtmp(2)
-    real(r8) :: tbot, pbot
+    real(r8) :: t2, pslv
     real(r8) :: e, qsat
     type(ESMF_VM) :: vm
     character(len=*), parameter :: subname='(datm_datamode_era5_advance): '
@@ -393,56 +393,6 @@ contains
        call ESMF_VMGetCurrent(vm, rc=rc)
        ! determine t2max (see below for use)
        if (associated(Sa_t2m)) then
-          rtmp(1) = maxval(Sa_t2m(:))
-          call ESMF_VMAllReduce(vm, rtmp, rtmp(2:), 1, ESMF_REDUCE_MAX, rc=rc)
-          t2max = rtmp(2)
-          if (mainproc) write(logunit,*) trim(subname),' t2max = ',t2max
-       end if
-
-       ! determine tdewmax (see below for use)
-       if (associated(strm_tdew)) then
-          rtmp(1) = maxval(strm_tdew(:))
-          call ESMF_VMAllReduce(vm, rtmp, rtmp(2:), 1, ESMF_REDUCE_MAX, rc=rc)
-          td2max = rtmp(2)
-          if (mainproc) write(logunit,*) trim(subname),' td2max = ',td2max
-       end if
-
-       ! determine lwmax / lwmax
-       if (associated(Faxa_lwdn)) then
-          rtmp(1) = maxval(Faxa_lwdn(:))
-          call ESMF_VMAllReduce(vm, rtmp, rtmp(2:), 1, ESMF_REDUCE_MAX, rc=rc)
-          lwmax = rtmp(2)
-          if (mainproc) write(logunit,*) trim(subname),' lwmax = ',lwmax
-       else
-          ! try with other variable since Faxa_lwdn is not available
-          if (associated(Faxa_lwnet)) then
-            rtmp(1) = maxval(Faxa_lwnet(:))
-            call ESMF_VMAllReduce(vm, rtmp, rtmp(2:), 1, ESMF_REDUCE_MAX, rc=rc)
-            lwmax = rtmp(2)
-            if (mainproc) write(logunit,*) trim(subname),' lwmax = ',lwmax
-          else
-            lwmax = 0.0_r8
-          end if
-       end if
-
-       ! determine precmax
-       if (associated(Faxa_rain)) then
-          rtmp(1) = maxval(Faxa_rain(:))
-          call ESMF_VMAllReduce(vm, rtmp, rtmp(2:), 1, ESMF_REDUCE_MAX, rc=rc)
-          precmax = rtmp(2)
-          if (mainproc) write(logunit,*) trim(subname),' precmax = ', precmax
-       else
-          ! try with other variable since Faxa_rain is not available
-          if (associated(Faxa_rainl)) then
-            rtmp(1) = maxval(Faxa_rainl(:))
-            call ESMF_VMAllReduce(vm, rtmp, rtmp(2:), 1, ESMF_REDUCE_MAX, rc=rc)
-            precmax = rtmp(2)
-            if (mainproc) write(logunit,*) trim(subname),' precmax = ', precmax
-          else
-            precmax = 0.0_r8
-          end if
-       end if
-=======
          Sa_t2m(:) = strm_Sa_t2m(:)
          rtmp(1) = maxval(Sa_t2m(:))
 
@@ -457,7 +407,6 @@ contains
        td2max = rtmp(2)
 
        if (mainproc) write(logunit,*) subname,' td2max = ',td2max
->>>>>>> ESCOMP/main
 
        ! reset first_time
        first_time = .false.
@@ -465,7 +414,7 @@ contains
 
     do n = 1, lsize
        !--- bottom layer height ---
-       if (.not. associated(strm_z) .and. associated(Sa_z)) then
+       if (associated(Sa_z)) then
           Sa_z(n) = 10.0_r8
        end if
 
