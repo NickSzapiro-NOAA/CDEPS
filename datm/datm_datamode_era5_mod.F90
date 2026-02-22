@@ -77,8 +77,6 @@ module datm_datamode_era5_mod
 
   real(r8) :: t2max   ! units detector
   real(r8) :: td2max  ! units detector
-  real(r8) :: lwmax ! units detector
-  real(r8) :: precmax ! units detector
 
   real(r8) , parameter :: tKFrz    = SHR_CONST_TKFRZ
   real(r8) , parameter :: rdair    = SHR_CONST_RDAIR ! dry air gas constant ~ J/K/kg
