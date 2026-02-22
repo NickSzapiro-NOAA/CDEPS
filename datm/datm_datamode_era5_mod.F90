@@ -267,6 +267,7 @@ contains
        return
     end if
 
+#ifdef CESMCOUPLED
     if (associated(Sa_wspd10m) .and. .not. associated(strm_Sa_u10m)) then
        call shr_log_error(subname//'ERROR: strm_Sa_u10m must be associated for era5 datamode', rc=rc)
        return
@@ -359,6 +360,7 @@ contains
        call shr_log_error(subname//'ERROR: strm_Faxa_tauy must be associated for era5 datamode', rc=rc)
        return
     end if
+#endif
 
   end subroutine datm_datamode_era5_init_pointers
 
@@ -417,7 +419,7 @@ contains
        end if
 
        !--- calculate wind speed ---
-       if (associated(Sa_wspd10m)) then
+       if (associated(Sa_wspd10m) .and. associated(Sa_u10m) .and. associated(Sa_v10m)) then
          Sa_wspd10m(n) = sqrt(strm_Sa_u10m(n)*strm_Sa_u10m(n) + strm_Sa_v10m(n)*strm_Sa_v10m(n))
        end if
 
@@ -438,10 +440,12 @@ contains
 
     !--- shortwave radiation (Faxa_* basically holds albedo) ---
     !--- see comments for Faxa_swnet
+    if (associated(strm_Faxa_swdn)) then
     if (associated(Faxa_swvdr)) Faxa_swvdr(:) = strm_Faxa_swdn(:)*strm_Faxa_swvdr(:)
     if (associated(Faxa_swndr)) Faxa_swndr(:) = strm_Faxa_swdn(:)*strm_Faxa_swndr(:)
     if (associated(Faxa_swvdf)) Faxa_swvdf(:) = strm_Faxa_swdn(:)*strm_Faxa_swvdf(:)
     if (associated(Faxa_swndf)) Faxa_swndf(:) = strm_Faxa_swdn(:)*strm_Faxa_swndf(:)
+    end if
 
     !--- TODO: need to understand relationship between shortwave bands and
     !--- net shortwave rad. currently it is provided directly from ERA5
