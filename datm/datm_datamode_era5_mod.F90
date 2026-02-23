@@ -427,6 +427,16 @@ contains
        first_time = .false.
     end if
 
+    ! copy through
+    if (associated(Sa_t2m)  .and. associated(strm_Sa_t2m))  Sa_t2m(:)  = strm_Sa_t2m(:)
+    if (associated(Sa_tbot) .and. associated(strm_Sa_tbot)) Sa_tbot(:) = strm_Sa_tbot(:)
+    if (associated(Sa_pbot) .and. associated(strm_Sa_pbot)) Sa_pbot(:) = strm_Sa_pbot(:)
+    if (associated(Sa_pslv) .and. associated(strm_Sa_pslv)) Sa_pslv(:) = strm_Sa_pslv(:)
+    if (associated(Sa_u10m) .and. associated(strm_Sa_u10m)) Sa_u10m(:) = strm_Sa_u10m(:)
+    if (associated(Sa_v10m) .and. associated(strm_Sa_v10m)) Sa_v10m(:) = strm_Sa_v10m(:)
+    if (associated(Sa_u) .and. associated(strm_Sa_u)) Sa_u(:) = strm_Sa_u(:)
+    if (associated(Sa_v) .and. associated(strm_Sa_v)) Sa_v(:) = strm_Sa_v(:)
+
     do n = 1, lsize
        !--- bottom layer height ---
        if (associated(Sa_z)) then
