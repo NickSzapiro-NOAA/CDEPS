@@ -172,6 +172,14 @@ contains
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
     call shr_strdata_get_stream_pointer(sdat, 'Sa_pslv', strm_Sa_pslv, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call shr_strdata_get_stream_pointer(sdat, 'Sa_u', strm_Sa_u, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call shr_strdata_get_stream_pointer(sdat, 'Sa_v', strm_Sa_v, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call shr_strdata_get_stream_pointer(sdat, 'Sa_tbot' , strm_Sa_tbot , rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call shr_strdata_get_stream_pointer(sdat, 'Sa_pbot' , strm_Sa_pbot , rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
     call shr_strdata_get_stream_pointer(sdat, 'Faxa_swdn', strm_Faxa_swdn, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
     call shr_strdata_get_stream_pointer(sdat, 'Faxa_swvdr', strm_Faxa_swvdr, rc=rc)
@@ -423,14 +431,25 @@ contains
          Sa_wspd10m(n) = sqrt(strm_Sa_u10m(n)*strm_Sa_u10m(n) + strm_Sa_v10m(n)*strm_Sa_v10m(n))
        end if
 
+      if (associated(Sa_wspd) .and. (associated(strm_Sa_wspd) .eqv. .false.) then
+        if associated(strm_Sa_u) .and. associated(strm_Sa_v)) then
+           Sa_wspd(n) = sqrt(strm_Sa_u(n)*strm_Sa_u(n) + strm_Sa_v(n)*strm_Sa_v(n))
+        end if
+      end if
+
        !--- specific humidity at 2m ---
-       if (associated(Sa_t2m) .and. associated(strm_Sa_pslv) .and. associated(Sa_q2m)) then
-         t2 = Sa_t2m(n)
-         pslv = strm_Sa_pslv(n)
+       if (associated(Sa_q2m) .or. associated(Sa_shum)) then
+         if (associated(Sa_t2m)) t2 = Sa_t2m(n)
+         if (associated(strm_Sa_pslv)) pslv = strm_Sa_pslv(n)
+         if (associated(strm_Sa_tbot)) t2 = strm_Sa_tbot(n)
+         if (associated(strm_Sa_pbot)) pslv = strm_Sa_pbot(n)
+
          if (td2max < 50.0_r8) strm_Sa_tdew(n) = strm_Sa_tdew(n) + tkFrz
          e = datm_eSat(strm_Sa_tdew(n), t2)
          qsat = (0.622_r8 * e)/(pslv - 0.378_r8 * e)
-         Sa_q2m(n) = qsat
+         if (associated(Sa_q2m)) Sa_q2m(n) = qsat
+         if (associated(Sa_shum)) Sa_shum(n) = qsat
+       else if
        end if
     end do
 
