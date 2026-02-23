@@ -57,6 +57,11 @@ module datm_datamode_era5_mod
   real(r8), pointer :: strm_Sa_u10m(:)    => null()
   real(r8), pointer :: strm_Sa_v10m(:)    => null()
   real(r8), pointer :: strm_Sa_pslv(:)    => null()
+  real(r8), pointer :: strm_Sa_u(:)       => null()
+  real(r8), pointer :: strm_Sa_v(:)       => null()
+  real(r8), pointer :: strm_Sa_wnd(:)     => null()
+  real(r8), pointer :: strm_Sa_tbot(:)    => null()
+  real(r8), pointer :: strm_Sa_pbot(:)    => null()
   real(r8), pointer :: strm_Faxa_swdn(:)  => null()
   real(r8), pointer :: strm_Faxa_swvdr(:) => null()
   real(r8), pointer :: strm_Faxa_swndr(:) => null()
@@ -431,8 +436,8 @@ contains
          Sa_wspd10m(n) = sqrt(strm_Sa_u10m(n)*strm_Sa_u10m(n) + strm_Sa_v10m(n)*strm_Sa_v10m(n))
        end if
 
-      if (associated(Sa_wspd) .and. (associated(strm_Sa_wspd) .eqv. .false.) then
-        if associated(strm_Sa_u) .and. associated(strm_Sa_v)) then
+      if (associated(Sa_wspd) .and. (associated(strm_Sa_wspd) .eqv. .false.)) then
+        if (associated(strm_Sa_u) .and. associated(strm_Sa_v)) then
            Sa_wspd(n) = sqrt(strm_Sa_u(n)*strm_Sa_u(n) + strm_Sa_v(n)*strm_Sa_v(n))
         end if
       end if
@@ -449,7 +454,6 @@ contains
          qsat = (0.622_r8 * e)/(pslv - 0.378_r8 * e)
          if (associated(Sa_q2m)) Sa_q2m(n) = qsat
          if (associated(Sa_shum)) Sa_shum(n) = qsat
-       else if
        end if
     end do
 
