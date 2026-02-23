@@ -392,7 +392,7 @@ contains
     if (first_time) then
        call ESMF_VMGetCurrent(vm, rc=rc)
        ! determine t2max (see below for use)
-       if (associated(Sa_t2m)) then
+       if (associated(Sa_t2m) .and. associated(strm_Sa_t2m)) then
          Sa_t2m(:) = strm_Sa_t2m(:)
          rtmp(1) = maxval(Sa_t2m(:))
 
@@ -419,12 +419,12 @@ contains
        end if
 
        !--- calculate wind speed ---
-       if (associated(Sa_wspd10m) .and. associated(Sa_u10m) .and. associated(Sa_v10m)) then
+       if (associated(Sa_wspd10m) .and. associated(strm_Sa_u10m) .and. associated(strm_Sa_v10m)) then
          Sa_wspd10m(n) = sqrt(strm_Sa_u10m(n)*strm_Sa_u10m(n) + strm_Sa_v10m(n)*strm_Sa_v10m(n))
        end if
 
        !--- specific humidity at 2m ---
-       if (associated(Sa_t2m) .and. associated(Sa_pslv) .and. associated(Sa_q2m)) then
+       if (associated(Sa_t2m) .and. associated(strm_Sa_pslv) .and. associated(Sa_q2m)) then
          t2 = Sa_t2m(n)
          pslv = strm_Sa_pslv(n)
          if (td2max < 50.0_r8) strm_Sa_tdew(n) = strm_Sa_tdew(n) + tkFrz
@@ -441,10 +441,10 @@ contains
     !--- shortwave radiation (Faxa_* basically holds albedo) ---
     !--- see comments for Faxa_swnet
     if (associated(strm_Faxa_swdn)) then
-    if (associated(Faxa_swvdr)) Faxa_swvdr(:) = strm_Faxa_swdn(:)*strm_Faxa_swvdr(:)
-    if (associated(Faxa_swndr)) Faxa_swndr(:) = strm_Faxa_swdn(:)*strm_Faxa_swndr(:)
-    if (associated(Faxa_swvdf)) Faxa_swvdf(:) = strm_Faxa_swdn(:)*strm_Faxa_swvdf(:)
-    if (associated(Faxa_swndf)) Faxa_swndf(:) = strm_Faxa_swdn(:)*strm_Faxa_swndf(:)
+    if (associated(Faxa_swvdr) .and. associated(strm_Faxa_swvdr)) Faxa_swvdr(:) = strm_Faxa_swdn(:)*strm_Faxa_swvdr(:)
+    if (associated(Faxa_swndr) .and. associated(strm_Faxa_swndr)) Faxa_swndr(:) = strm_Faxa_swdn(:)*strm_Faxa_swndr(:)
+    if (associated(Faxa_swvdf) .and. associated(strm_Faxa_swvdf)) Faxa_swvdf(:) = strm_Faxa_swdn(:)*strm_Faxa_swvdf(:)
+    if (associated(Faxa_swndf) .and. associated(strm_Faxa_swndf)) Faxa_swndf(:) = strm_Faxa_swdn(:)*strm_Faxa_swndf(:)
     end if
 
     !--- TODO: need to understand relationship between shortwave bands and
@@ -463,27 +463,27 @@ contains
     !----------------------------------------------------------
 
     ! convert J/m^2 to W/m^2
-    if (associated(Faxa_lwdn))  Faxa_lwdn(:)  = strm_Faxa_lwdn(:)/3600.0_r8
-    if (associated(Faxa_lwnet)) Faxa_lwnet(:) = strm_Faxa_lwnet(:)/3600.0_r8
-    if (associated(Faxa_swvdr)) Faxa_swvdr(:) = strm_Faxa_swvdr(:)/3600.0_r8
-    if (associated(Faxa_swndr)) Faxa_swndr(:) = strm_Faxa_swndr(:)/3600.0_r8
-    if (associated(Faxa_swvdf)) Faxa_swvdf(:) = strm_Faxa_swvdf(:)/3600.0_r8
-    if (associated(Faxa_swndf)) Faxa_swndf(:) = strm_Faxa_swndf(:)/3600.0_r8
-    if (associated(Faxa_swdn))  Faxa_swdn(:)  = strm_Faxa_swdn(:)/3600.0_r8
-    if (associated(Faxa_swnet)) Faxa_swnet(:) = strm_Faxa_swnet(:)/3600.0_r8
-    if (associated(Faxa_sen))   Faxa_sen(:)   = strm_Faxa_sen(:)/3600.0_r8
-    if (associated(Faxa_lat))   Faxa_lat(:)   = strm_Faxa_lat(:)/3600.0_r8
+    if (associated(Faxa_lwdn) .and. associated(strm_Faxa_lwdn))   Faxa_lwdn(:)  = strm_Faxa_lwdn(:)/3600.0_r8
+    if (associated(Faxa_lwnet) .and. associated(strm_Faxa_lwnet)) Faxa_lwnet(:) = strm_Faxa_lwnet(:)/3600.0_r8
+    if (associated(Faxa_swvdr) .and. associated(strm_Faxa_swvdr)) Faxa_swvdr(:) = strm_Faxa_swvdr(:)/3600.0_r8
+    if (associated(Faxa_swndr) .and. associated(strm_Faxa_swndr)) Faxa_swndr(:) = strm_Faxa_swndr(:)/3600.0_r8
+    if (associated(Faxa_swvdf) .and. associated(strm_Faxa_swvdf)) Faxa_swvdf(:) = strm_Faxa_swvdf(:)/3600.0_r8
+    if (associated(Faxa_swndf) .and. associated(strm_Faxa_swndf)) Faxa_swndf(:) = strm_Faxa_swndf(:)/3600.0_r8
+    if (associated(Faxa_swdn) .and. associated(strm_Faxa_swdn))   Faxa_swdn(:)  = strm_Faxa_swdn(:)/3600.0_r8
+    if (associated(Faxa_swnet) .and. associated(strm_Faxa_swnet)) Faxa_swnet(:) = strm_Faxa_swnet(:)/3600.0_r8
+    if (associated(Faxa_sen) .and. associated(strm_Faxa_sen))     Faxa_sen(:)   = strm_Faxa_sen(:)/3600.0_r8
+    if (associated(Faxa_lat) .and. associated(strm_Faxa_lat))     Faxa_lat(:)   = strm_Faxa_lat(:)/3600.0_r8
 
     ! convert m to kg/m^2/s
-    if (associated(Faxa_rain))  Faxa_rain(:)  = strm_Faxa_rain(:)/3600.0_r8*rhofw
-    if (associated(Faxa_rainc)) Faxa_rainc(:) = strm_Faxa_rainc(:)/3600.0_r8*rhofw
-    if (associated(Faxa_rainl)) Faxa_rainl(:) = strm_Faxa_rainl(:)/3600.0_r8*rhofw
-    if (associated(Faxa_snowc)) Faxa_snowc(:) = strm_Faxa_snowc(:)/3600.0_r8*rhofw
-    if (associated(Faxa_snowl)) Faxa_snowl(:) = strm_Faxa_snowl(:)/3600.0_r8*rhofw
+    if (associated(Faxa_rain) .and. associated(strm_Faxa_rain))   Faxa_rain(:)  = strm_Faxa_rain(:)/3600.0_r8*rhofw
+    if (associated(Faxa_rainc) .and. associated(strm_Faxa_rainc)) Faxa_rainc(:) = strm_Faxa_rainc(:)/3600.0_r8*rhofw
+    if (associated(Faxa_rainl) .and. associated(strm_Faxa_rainl)) Faxa_rainl(:) = strm_Faxa_rainl(:)/3600.0_r8*rhofw
+    if (associated(Faxa_snowc) .and. associated(strm_Faxa_snowc)) Faxa_snowc(:) = strm_Faxa_snowc(:)/3600.0_r8*rhofw
+    if (associated(Faxa_snowl) .and. associated(strm_Faxa_snowl)) Faxa_snowl(:) = strm_Faxa_snowl(:)/3600.0_r8*rhofw
 
     ! convert N/m^2 s to N/m^2
-    if (associated(Faxa_taux))  Faxa_taux(:)  = strm_Faxa_taux(:)/3600.0_r8
-    if (associated(Faxa_tauy))  Faxa_tauy(:)  = strm_Faxa_tauy(:)/3600.0_r8
+    if (associated(Faxa_taux) .and. associated(strm_Faxa_taux))  Faxa_taux(:)  = strm_Faxa_taux(:)/3600.0_r8
+    if (associated(Faxa_tauy) .and. associated(strm_Faxa_tauy))  Faxa_tauy(:)  = strm_Faxa_tauy(:)/3600.0_r8
 
   end subroutine datm_datamode_era5_advance
 
