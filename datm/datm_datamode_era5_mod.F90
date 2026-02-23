@@ -59,7 +59,7 @@ module datm_datamode_era5_mod
   real(r8), pointer :: strm_Sa_pslv(:)    => null()
   real(r8), pointer :: strm_Sa_u(:)       => null()
   real(r8), pointer :: strm_Sa_v(:)       => null()
-  real(r8), pointer :: strm_Sa_wnd(:)     => null()
+  real(r8), pointer :: strm_Sa_wspd(:)    => null()
   real(r8), pointer :: strm_Sa_tbot(:)    => null()
   real(r8), pointer :: strm_Sa_pbot(:)    => null()
   real(r8), pointer :: strm_Faxa_swdn(:)  => null()
@@ -180,6 +180,8 @@ contains
     call shr_strdata_get_stream_pointer(sdat, 'Sa_u', strm_Sa_u, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
     call shr_strdata_get_stream_pointer(sdat, 'Sa_v', strm_Sa_v, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call shr_strdata_get_stream_pointer(sdat, 'Sa_wspd', strm_Sa_wspd, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
     call shr_strdata_get_stream_pointer(sdat, 'Sa_tbot' , strm_Sa_tbot , rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
@@ -436,11 +438,11 @@ contains
          Sa_wspd10m(n) = sqrt(strm_Sa_u10m(n)*strm_Sa_u10m(n) + strm_Sa_v10m(n)*strm_Sa_v10m(n))
        end if
 
-      if (associated(Sa_wspd) .and. (associated(strm_Sa_wspd) .eqv. .false.)) then
-        if (associated(strm_Sa_u) .and. associated(strm_Sa_v)) then
-           Sa_wspd(n) = sqrt(strm_Sa_u(n)*strm_Sa_u(n) + strm_Sa_v(n)*strm_Sa_v(n))
-        end if
+      if (associated(Sa_wspd) .and. associated(strm_Sa_u) .and. associated(strm_Sa_v)) then
+         Sa_wspd(n) = sqrt(strm_Sa_u(n)*strm_Sa_u(n) + strm_Sa_v(n)*strm_Sa_v(n))
       end if
+      if (associated(strm_Sa_wspd) .and. associated(Sa_u) .and. (associated(strm_Sa_u) .eqv. .false.)) Sa_u(n) = strm_Sa_wspd(n)/sqrt(2.0_r8)
+      if (associated(strm_Sa_wspd) .and. associated(Sa_v) .and. (associated(strm_Sa_v) .eqv. .false.)) Sa_v(n) = strm_Sa_wspd(n)/sqrt(2.0_r8)
 
        !--- specific humidity at 2m ---
        if (associated(Sa_q2m) .or. associated(Sa_shum)) then
