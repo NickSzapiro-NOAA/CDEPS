@@ -271,6 +271,9 @@ contains
     ! Determine logical mainproc
     mainproc = (my_task == main_task)
 
+#ifndef CESMCOUPLED
+    skip_field_check = .true.
+#endif
     ! Read atm_nml from nlfilename
     if (my_task == main_task) then
        nlfilename = "datm_in"//trim(inst_suffix)
