@@ -32,6 +32,7 @@ module cdeps_datm_comp
   use shr_log_mod      , only : shr_log_setLogUnit, shr_log_error
   use dshr_methods_mod , only : dshr_state_diagnose, chkerr, memcheck
   use dshr_strdata_mod , only : shr_strdata_type, shr_strdata_init_from_config, shr_strdata_advance
+  use dshr_strdata_mod , only : shr_strdata_init_advertise, shr_strdata_init_realize
   use dshr_strdata_mod , only : shr_strdata_get_stream_pointer, shr_strdata_setOrbs
   use dshr_mod         , only : dshr_model_initphase, dshr_init, dshr_restart_write
   use dshr_mod         , only : dshr_state_setscalar, dshr_set_runclock, dshr_log_clock_advance
@@ -82,6 +83,10 @@ module cdeps_datm_comp
   use datm_pres_co2_mod         , only : datm_pres_co2_advertise
   use datm_pres_co2_mod         , only : datm_pres_co2_init_pointers
   use datm_pres_co2_mod         , only : datm_pres_co2_advance
+
+  use dshr_generic_mod          , only : datamode_generic_advertise
+  use dshr_generic_mod          , only : datamode_generic_init_pointers
+  use dshr_generic_mod          , only : datamode_generic_advance
 
   implicit none
   private
@@ -366,12 +371,20 @@ contains
     select case (trim(datamode))
        case ('CORE2_NYF','CORE2_IAF','CORE_IAF_JRA', &
              'CORE_RYF6162_JRA','CORE_RYF8485_JRA','CORE_RYF9091_JRA','CORE_RYF0304_JRA', &
-             'CLMNCEP','CPLHIST','GEFS','ERA5','SIMPLE')
+             'CLMNCEP','CPLHIST','GEFS','ERA5','SIMPLE','GENERIC')
        if (mainproc) write(logunit,'(3a)') subname,'datm datamode = ',trim(datamode)
     case default
        call shr_log_error(' ERROR illegal datm datamode = '//trim(datamode), rc=rc)
        return
     end select
+
+    ! Initialize stream data type
+    streamfilename = 'datm.streams'//trim(inst_suffix)
+#ifndef DISABLE_FoX
+    streamfilename = trim(streamfilename)//'.xml'
+#endif
+    call shr_strdata_init_advertise(sdat, streamfilename, 'ATM', logunit, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
     ! Advertise fields that ARE NOT datamode specific
     if (flds_co2) then
@@ -410,6 +423,9 @@ contains
     case ('SIMPLE')
        call datm_datamode_simple_advertise(exportState, fldsExport, flds_scalar_name, &
             nlfilename, my_task, vm, rc)
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    case ('GENERIC')
+       call datamode_generic_advertise(fldsExport, sdat, rc)
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
     end select
 
@@ -454,12 +470,7 @@ contains
          model_meshfile, model_maskfile, model_mesh, model_mask, model_frac, restart_read, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    ! Initialize stream data type
-    streamfilename = 'datm.streams'//trim(inst_suffix)
-#ifndef DISABLE_FoX
-    streamfilename = trim(streamfilename)//'.xml'
-#endif
-    call shr_strdata_init_from_config(sdat, streamfilename, model_mesh, clock, 'ATM', logunit, rc=rc)
+    call shr_strdata_init_realize(sdat, model_mesh, clock, rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
     call ESMF_TraceRegionExit('datm_strdata_init')
 
@@ -677,6 +688,9 @@ contains
        case('SIMPLE')
           call datm_datamode_simple_init_pointers(exportState, sdat, rc)
           if (ChkErr(rc,__LINE__,u_FILE_u)) return
+       case('GENERIC')
+          call datamode_generic_init_pointers(exportState, sdat, rc)
+          if (ChkErr(rc,__LINE__,u_FILE_u)) return
        end select
 
        ! Read restart if needed
@@ -687,7 +701,7 @@ contains
           case('CORE2_NYF','CORE2_IAF','CORE_IAF_JRA',&
                'CORE_RYF6162_JRA','CORE_RYF8485_JRA' ,&
                'CORE_RYF9091_JRA','CORE_RYF0304_JRA' ,&
-               'CLMNCEP','CPLHIST','ERA5','GEFS','SIMPLE')
+               'CLMNCEP','CPLHIST','ERA5','GEFS','SIMPLE','GENERIC')
              call dshr_restart_read(restfilm, rpfile, logunit, my_task, mpicom, sdat, rc)
              if (ChkErr(rc,__LINE__,u_FILE_u)) return
           case default
@@ -755,6 +769,9 @@ contains
     case('SIMPLE')
        call datm_datamode_simple_advance(target_ymd, target_tod, target_mon, sdat%model_calendar, rc)
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    case('GENERIC')
+       call datamode_generic_advance(rc)
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
     end select
 
     ! Write restarts if needed
@@ -765,7 +782,7 @@ contains
        case('CORE2_NYF','CORE2_IAF','CORE_IAF_JRA',&
             'CORE_RYF6162_JRA','CORE_RYF8485_JRA' ,&
             'CORE_RYF9091_JRA','CORE_RYF0304_JRA' ,&
-            'CLMNCEP','CPLHIST','ERA5','GEFS','SIMPLE')
+            'CLMNCEP','CPLHIST','ERA5','GEFS','SIMPLE','GENERIC')
           call dshr_restart_write(rpfile, case_name, 'datm', inst_suffix, &
                target_ymd, target_tod, logunit, my_task, sdat, rc)
           if (ChkErr(rc,__LINE__,u_FILE_u)) return
