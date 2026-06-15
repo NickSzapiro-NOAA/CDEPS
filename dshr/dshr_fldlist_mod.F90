@@ -79,7 +79,6 @@ contains
        stdname = fldList%stdname
 
        if (NUOPC_IsConnected(state, fieldName=stdname) .or. export_all) then
-
           ! Check field name since linked list might have empty string
           if (trim(stdname) == '') then
              fldList => fldList%next

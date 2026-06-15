@@ -188,7 +188,7 @@ contains
   !===============================================================================
   subroutine InitializeAdvertise(gcomp, importState, exportState, clock, rc)
     use shr_nl_mod, only:  shr_nl_find_group_name
-
+    
     ! input/output variables
     type(ESMF_GridComp)  :: gcomp
     type(ESMF_State)     :: importState, exportState
@@ -218,7 +218,7 @@ contains
 
     ! Obtain flds_scalar values, mpi values, multi-instance values and
     ! set logunit and set shr logging to my log file
-    call dshr_init(gcomp, 'OCN', mpicom, my_task, inst_index, inst_suffix, &
+    call dshr_init(gcomp, sdat, 'OCN', mpicom, my_task, inst_index, inst_suffix, &
          flds_scalar_name, flds_scalar_num, flds_scalar_index_nx, flds_scalar_index_ny, logunit, rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
@@ -260,6 +260,7 @@ contains
        if(skip_restart_read) bcasttmp(3) = 1
        if(export_all) bcasttmp(4) = 1
        rtmp(1) = sst_constant_value
+       if(export_all) bcasttmp(4) = 1
     endif
 
     ! Broadcast namelist input
@@ -398,7 +399,7 @@ contains
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
     end if
 
-    call dshr_mesh_init(gcomp, sdat, nullstr, logunit, 'OCN', nx_global, ny_global, &
+    call dshr_mesh_init(gcomp, nullstr, logunit, 'OCN', nx_global, ny_global, &
          model_meshfile, model_maskfile, model_mesh, model_mask, model_frac, restart_read, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 

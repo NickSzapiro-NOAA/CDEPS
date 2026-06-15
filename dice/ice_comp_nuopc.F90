@@ -182,6 +182,7 @@ contains
     integer           :: bcasttmp(4)
     real(r8)          :: rbcasttmp(3)
     type(ESMF_VM)     :: vm
+    logical           :: isPresent, isSet
     character(len=*),parameter  :: subname=trim(modName)//':(InitializeAdvertise) '
     !-------------------------------------------------------------------------------
 
@@ -197,7 +198,7 @@ contains
 
     ! Obtain flds_scalar values, mpi values, multi-instance values and
     ! set logunit and set shr logging to my log file
-    call dshr_init(gcomp, 'ICE', mpicom, my_task, inst_index, inst_suffix, &
+    call dshr_init(gcomp, sdat, 'ICE', mpicom, my_task, inst_index, inst_suffix, &
          flds_scalar_name, flds_scalar_num, flds_scalar_index_nx, flds_scalar_index_ny, &
          logunit, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
@@ -240,6 +241,7 @@ contains
        rbcasttmp(1) = flux_swpf
        rbcasttmp(2) = flux_Qmin
        rbcasttmp(3) = flux_Qacc0
+       if(export_all) bcasttmp(4) = 1
     endif
 
     ! broadcast namelist input
@@ -254,7 +256,7 @@ contains
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
     call ESMF_VMBroadcast(vm, restfilm, CX, main_task, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    call ESMF_VMBroadcast(vm, bcasttmp, 3, main_task, rc=rc)
+    call ESMF_VMBroadcast(vm, bcasttmp, 4, main_task, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
     call ESMF_VMBroadcast(vm, rbcasttmp, 3, main_task, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
@@ -326,7 +328,7 @@ contains
 
     ! Initialize mesh, restart flag, logunit
     call ESMF_TraceRegionEnter('dice_strdata_init')
-    call dshr_mesh_init(gcomp, sdat, nullstr, logunit, 'ICE', nx_global, ny_global, &
+    call dshr_mesh_init(gcomp, nullstr, logunit, 'ICE', nx_global, ny_global, &
          model_meshfile, model_maskfile, model_mesh, model_mask, model_frac, restart_read, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
