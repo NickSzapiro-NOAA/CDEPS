@@ -18,12 +18,11 @@ module datm_datamode_ufs_mod
   
   ! CDEPS-native imports
   use shr_kind_mod,     only: r8 => shr_kind_r8
-  use shr_strdata_mod,  only: shr_strdata_type, shr_strdata_get_stream_pointer
-  use dshr_state_mod,   only: dshr_state_getfldptr
+  use dshr_strdata_mod, only: shr_strdata_type, shr_strdata_get_stream_pointer
+  use dshr_methods_mod, only: dshr_state_getfldptr, chkerr
   use shr_log_mod,      only: shr_log_error
-  use dshr_utils_mod,   only: ChkErr
-  use dshr_stream_mod,  only: dshr_stream_type, shr_stream_init_from_esmfconfig
-  use dshr_fldList_mod, only: dshr_fldList_type, dshr_fldList_add
+  use dshr_stream_mod,  only: shr_stream_streamType, shr_stream_init_from_esmfconfig
+  use dshr_fldList_mod, only: fldList_type, dshr_fldList_add
 
   implicit none
   private
@@ -53,11 +52,13 @@ contains
   ! \brief Reads config streams and advertises to CDEPS field list
   !=============================================================================
   subroutine datm_datamode_ufs_advertise(fldsExport, ufs_state, rc)
-    type(dshr_fldList_type),  intent(inout) :: fldsExport
+    use pio, only : iosystem_desc_t
+
+    type(fldList_type),       pointer       :: fldsExport
     type(ufs_datamode_state), intent(inout) :: ufs_state
     integer,                  intent(out)   :: rc
     
-    type(dshr_stream_type), allocatable :: streams(:)
+    type(shr_stream_streamType), pointer    :: streamdat(:)
     integer :: istrm, ivar
     
     character(len=18) :: streamfilename = 'datm.streams'
@@ -65,27 +66,25 @@ contains
     ! Dummy IO variables for parsing stage. 
     ! The actual IO handles will be set up by sdat during Realize.
     integer :: logunit       = 6
-    integer :: pio_subsystem = 0
+    type(iosystem_desc_t), pointer :: pio_subsystem
     integer :: io_type       = 0
     integer :: io_format     = 0
 
     rc = ESMF_SUCCESS
 
     ! Parse stream file for 1-to-1 variables using dummy IO handles
-    call shr_stream_init_from_esmfconfig(streamfilename, streams, logunit, &
+    call shr_stream_init_from_esmfconfig(streamfilename, streamdat, logunit, &
                                          pio_subsystem, io_type, io_format, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    if (allocated(streams)) then
-      do istrm = 1, size(streams)
-        ! Loop over stream nvars and fetch nameinmodel per CDEPS structs
-        do ivar = 1, streams(istrm)%nvars
-          call append_var_map(ufs_state%var_maps, streams(istrm)%varlist(ivar)%nameinmodel)
-          call dshr_fldList_add(fldsExport, trim(streams(istrm)%varlist(ivar)%nameinmodel))
-        end do
+    do istrm = 1, size(streamdat)
+      ! Loop over stream nvars and fetch nameinmodel per CDEPS structs
+      do ivar = 1, streamdat(istrm)%nvars
+        call append_var_map(ufs_state%var_maps, streamdat(istrm)%varlist(ivar)%nameinmodel)
+        call dshr_fldList_add(fldsExport, trim(streamdat(istrm)%varlist(ivar)%nameinmodel))
       end do
-      deallocate(streams)
-    end if
+    end do
+    ! deallocate(streamdat)
 
   end subroutine datm_datamode_ufs_advertise
 

@@ -120,6 +120,7 @@ module cdeps_datm_comp
   logical                      :: restart_read              ! start from restart
   character(CL)                :: case_name                 ! case name
   character(len=*) , parameter :: nullstr = 'null'
+  type(ufs_datamode_state)     :: ufs_state
 
   ! datm_in namelist input
   character(CX)                :: nlfilename = nullstr                ! filename to obtain namelist info from
@@ -147,7 +148,7 @@ module cdeps_datm_comp
   logical                      :: export_all = .false.                ! true => export all fields, do not check connected or not
   logical                      :: first_call = .true.
   
-  character(CX)                :: calc_opts = nullstr                 ! model restart file namelist
+  character(CX)                :: calc_opts = nullstr                 ! derived variable calculation options
 
   ! linked lists
   type(fldList_type) , pointer :: fldsImport => null()
