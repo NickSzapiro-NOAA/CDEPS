@@ -52,17 +52,18 @@ contains
   !=============================================================================
   ! \brief Reads config streams and advertises to CDEPS field list
   !=============================================================================
-  subroutine datm_datamode_ufs_advertise(fldsExport, config, ufs_state, rc)
+  subroutine datm_datamode_ufs_advertise(fldsExport, ufs_state, rc)
     type(dshr_fldList_type),  intent(inout) :: fldsExport
-    type(ESMF_Config),        intent(in)    :: config
     type(ufs_datamode_state), intent(inout) :: ufs_state
     integer,                  intent(out)   :: rc
     
     type(dshr_stream_type), allocatable :: streams(:)
     integer :: istrm, ivar
     
-    ! Dummy variables for the shr_stream_init_from_esmfconfig call
-    character(len=256) :: streamfilename = 'dummy_config'
+    character(len=18) :: streamfilename = 'datm.streams'
+    
+    ! Dummy IO variables for parsing stage. 
+    ! The actual IO handles will be set up by sdat during Realize.
     integer :: logunit       = 6
     integer :: pio_subsystem = 0
     integer :: io_type       = 0
@@ -70,7 +71,7 @@ contains
 
     rc = ESMF_SUCCESS
 
-    ! Parse ESMF Config for 1-to-1 Stream Variables using dummy IO handles
+    ! Parse stream file for 1-to-1 variables using dummy IO handles
     call shr_stream_init_from_esmfconfig(streamfilename, streams, logunit, &
                                          pio_subsystem, io_type, io_format, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
@@ -92,9 +93,9 @@ contains
   !=============================================================================
   ! \brief Caches pass-through pointers natively into the instance state object
   !=============================================================================
-  subroutine datm_datamode_ufs_init_pointers(sdat, exportState, ufs_state, rc)
-    type(shr_strdata_type),   intent(inout) :: sdat
+  subroutine datm_datamode_ufs_init_pointers(exportState, sdat, ufs_state, rc)
     type(ESMF_State),         intent(inout) :: exportState
+    type(shr_strdata_type),   intent(inout) :: sdat
     type(ufs_datamode_state), intent(inout) :: ufs_state
     integer,                  intent(out)   :: rc
     
