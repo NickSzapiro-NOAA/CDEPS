@@ -419,7 +419,7 @@ contains
        call datm_datamode_gefs_advertise(exportState, fldsExport, flds_scalar_name, rc)
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
     case ('UFS')
-       call datm_datamode_ufs_advertise(fldsExport, config, ufs_state, rc)
+       call datm_datamode_ufs_advertise(fldsExport, ufs_state, rc)
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
     case ('SIMPLE')
        call datm_datamode_simple_advertise(exportState, fldsExport, flds_scalar_name, &
@@ -689,7 +689,7 @@ contains
           call datm_datamode_gefs_init_pointers(exportState, sdat, logunit, mainproc, rc)
           if (ChkErr(rc,__LINE__,u_FILE_u)) return
        case('UFS')
-          call datm_datamode_ufs_init_pointers(sdat, exportState, ufs_state, rc)
+          call datm_datamode_ufs_init_pointers(exportState, sdat, ufs_state, rc)
           if (ChkErr(rc,__LINE__,u_FILE_u)) return
        case('SIMPLE')
           call datm_datamode_simple_init_pointers(exportState, sdat, rc)
