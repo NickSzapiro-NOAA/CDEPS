@@ -33,7 +33,7 @@ module datm_datamode_ufs_mod
   public :: datm_datamode_ufs_advance
   public :: ufs_datamode_state
 
-  character(len=*), parameter :: u_FILE_u = 'datm_datamode_ufs_mod.F90'
+  character(len=*), parameter :: u_FILE_u = __FILE__
 
   !> \brief Dynamic mapping for pass-through variables
   type :: ufs_var_map
