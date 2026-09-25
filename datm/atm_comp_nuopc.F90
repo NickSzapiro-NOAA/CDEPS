@@ -314,7 +314,7 @@ contains
        write(logunit,'(2a,l6)') subname,' flds_co2          = ',flds_co2
        write(logunit,'(2a,l6)') subname,' skip_restart_read = ',skip_restart_read
        write(logunit,'(2a,l6)') subname,' export_all        = ',export_all
-       write(logunit,'(2a,l6)') subname,' calc_opts         = ',trim(calc_opts)
+       write(logunit,'(3a)')    subname,' calc_opts         = ',trim(calc_opts)
 
        bcasttmp = 0
        bcasttmp(1) = nx_global
