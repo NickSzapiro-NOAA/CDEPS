@@ -3,12 +3,13 @@
 !  Module: datm_datamode_ufs_mod
 !
 !  Description:
-!    Configurable datamode for UFS. Replaces hardcoded datamodes with a dynamic, 
-!    configuration-driven approach. 
+!    User-configurable datamode for UFS via datm.streams.
+!    Variable names need to be in fd_ufs.yaml ESMF field dictionary.
 !    
-!    - datm_datamode_ufs_advertise: Parses config and advertises stream variables.
-!    - datm_datamode_ufs_init_pointers: Caches pass-through pointers in state object.
-!    - datm_datamode_ufs_advance: Executes raw copy and chained calculations in-place.
+!    - datm_datamode_ufs_advertise: Parses config and advertises stream variables
+!    - datm_datamode_ufs_init_pointers: Caches pass-through pointers in state object
+!    - datm_datamode_ufs_advance: Executes raw copy and chained calculations in-place
+!    - datm_datamode_ufs_calc_driver: Executes user's calc_opts calculations
 !
 !===============================================================================
 module datm_datamode_ufs_mod
@@ -172,7 +173,6 @@ contains
 
   end subroutine datm_datamode_ufs_advertise
 
-
   !=============================================================================
   ! \brief Caches pass-through pointers natively into the instance state object
   !=============================================================================
@@ -202,7 +202,6 @@ contains
     end if
 
   end subroutine datm_datamode_ufs_init_pointers
-
 
   !=============================================================================
   ! \brief Core run loop. Performs array copies and triggers calculation driver.
@@ -238,7 +237,6 @@ contains
     
   end subroutine datm_datamode_ufs_advance
 
-
   !=============================================================================
   ! \brief Driver subroutine to route execution based on calc_opts string
   !=============================================================================
@@ -271,7 +269,6 @@ contains
 
   end subroutine datm_datamode_ufs_calc_driver
 
-
   !=============================================================================
   ! \brief Subroutine to dynamically append variables via Fortran 2003 move_alloc
   !=============================================================================
@@ -294,58 +291,34 @@ contains
     end if
   end subroutine append_var_map
 
-
   !=============================================================================
   ! Modular Calculation Subroutines
   !=============================================================================
-
-  subroutine calc_convert_precip_accum_to_rate(exportState, rc)
-    type(ESMF_State), intent(inout) :: exportState
-    integer,          intent(out)   :: rc
-    
-    character(len=*), parameter :: subName = 'calc_convert_precip_accum_to_rate: '
-    real(r8), pointer :: Faxa_prec(:) => null()
-
-    rc = ESMF_SUCCESS
-    call dshr_state_getfldptr(exportState, 'Faxa_prec', fldptr1=Faxa_prec, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    
-    if (.not. associated(Faxa_prec)) then
-      call shr_log_error(trim(subName)//'ERROR: Faxa_prec required for precip calculation.', rc=rc)
-      if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    end if
-
-    if (associated(Faxa_prec)) then
-      Faxa_prec(:) = Faxa_prec(:) * (1000.0_r8 / 3600.0_r8)
-    end if
-  end subroutine calc_convert_precip_accum_to_rate
-
 
   subroutine calc_convert_rad_accum_to_flux(exportState, rc)
     type(ESMF_State), intent(inout) :: exportState
     integer,          intent(out)   :: rc
     
-    character(len=*), parameter :: subName = 'calc_convert_rad_accum_to_flux: '
     real(r8), pointer :: Faxa_swdn(:) => null()
     real(r8), pointer :: Faxa_lwdn(:) => null()
 
     rc = ESMF_SUCCESS
-    call dshr_state_getfldptr(exportState, 'Faxa_swdn', fldptr1=Faxa_swdn, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    call dshr_state_getfldptr(exportState, 'Faxa_lwdn', fldptr1=Faxa_lwdn, rc=rc)
+    
+    call dshr_state_getfldptr(exportState, 'Faxa_swdn', fldptr1=Faxa_swdn, allowNullReturn=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
     
-    ! Apply conversion safely to whatever radiation variables the user provided
+    call dshr_state_getfldptr(exportState, 'Faxa_lwdn', fldptr1=Faxa_lwdn, allowNullReturn=.true., rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    
+    ! Convert J/m^2 to W/m^2
     if (associated(Faxa_swdn)) Faxa_swdn(:) = Faxa_swdn(:) / 3600.0_r8
     if (associated(Faxa_lwdn)) Faxa_lwdn(:) = Faxa_lwdn(:) / 3600.0_r8
   end subroutine calc_convert_rad_accum_to_flux
-
 
   subroutine calc_partition_sw_4band(exportState, rc)
     type(ESMF_State), intent(inout) :: exportState
     integer,          intent(out)   :: rc
     
-    character(len=*), parameter :: subName = 'calc_partition_sw_4band: '
     real(r8), pointer :: Faxa_swdn(:)  => null()
     real(r8), pointer :: Faxa_swndr(:) => null()
     real(r8), pointer :: Faxa_swvdr(:) => null()
@@ -354,59 +327,68 @@ contains
     
     rc = ESMF_SUCCESS
     
-    call dshr_state_getfldptr(exportState, 'Faxa_swdn',  fldptr1=Faxa_swdn,  rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    call dshr_state_getfldptr(exportState, 'Faxa_swndr', fldptr1=Faxa_swndr, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    call dshr_state_getfldptr(exportState, 'Faxa_swvdr', fldptr1=Faxa_swvdr, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    call dshr_state_getfldptr(exportState, 'Faxa_swndf', fldptr1=Faxa_swndf, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    call dshr_state_getfldptr(exportState, 'Faxa_swvdf', fldptr1=Faxa_swvdf, rc=rc)
+    ! Base total
+    call dshr_state_getfldptr(exportState, 'Faxa_swdn',  fldptr1=Faxa_swdn,  allowNullReturn=.false., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
     
-    if (.not. associated(Faxa_swdn)) then
-      call shr_log_error(trim(subName)//'ERROR: Faxa_swdn required as input for sw partitioning.', rc=rc)
-      if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    end if
+    ! Partitioned Marine Bands
+    call dshr_state_getfldptr(exportState, 'Faxa_swndr', fldptr1=Faxa_swndr, allowNullReturn=.true., rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call dshr_state_getfldptr(exportState, 'Faxa_swvdr', fldptr1=Faxa_swvdr, allowNullReturn=.true., rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call dshr_state_getfldptr(exportState, 'Faxa_swndf', fldptr1=Faxa_swndf, allowNullReturn=.true., rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call dshr_state_getfldptr(exportState, 'Faxa_swvdf', fldptr1=Faxa_swvdf, allowNullReturn=.true., rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    ! Only write to the output fields that the user explicitly allocated/advertised
-    if (associated(Faxa_swdn)) then
-      if (associated(Faxa_swndr)) Faxa_swndr(:) = Faxa_swdn(:) * 0.25_r8
-      if (associated(Faxa_swvdr)) Faxa_swvdr(:) = Faxa_swdn(:) * 0.25_r8
-      if (associated(Faxa_swndf)) Faxa_swndf(:) = Faxa_swdn(:) * 0.25_r8
-      if (associated(Faxa_swvdf)) Faxa_swvdf(:) = Faxa_swdn(:) * 0.25_r8
-    end if
+    ! GEFS marine defaults: equally split total SW into 4 bands (vis/nir, direct/diffuse)
+    ! Modify these fractions for uneven weights / zenith angle / ...
+    if (associated(Faxa_swndr)) Faxa_swndr(:) = Faxa_swdn(:) * 0.25_r8
+    if (associated(Faxa_swvdr)) Faxa_swvdr(:) = Faxa_swdn(:) * 0.25_r8
+    if (associated(Faxa_swndf)) Faxa_swndf(:) = Faxa_swdn(:) * 0.25_r8
+    if (associated(Faxa_swvdf)) Faxa_swvdf(:) = Faxa_swdn(:) * 0.25_r8
   end subroutine calc_partition_sw_4band
 
+  subroutine calc_convert_precip_accum_to_rate(exportState, rc)
+    type(ESMF_State), intent(inout) :: exportState
+    integer,          intent(out)   :: rc
+    
+    real(r8), pointer :: mean_prec_rate(:) => null()
+
+    rc = ESMF_SUCCESS
+    
+    ! Fetch the exact field name from fd_ufs.yaml
+    call dshr_state_getfldptr(exportState, 'mean_prec_rate', fldptr1=mean_prec_rate, allowNullReturn=.false., rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    
+    ! Convert from accumulated meters/hr to kg/m^2/s (rho_water=1000, 3600s)
+    mean_prec_rate(:) = mean_prec_rate(:) * (1000.0_r8 / 3600.0_r8)
+  end subroutine calc_convert_precip_accum_to_rate
 
   subroutine calc_partition_precip_freezing(exportState, rc)
     type(ESMF_State), intent(inout) :: exportState
     integer,          intent(out)   :: rc
     
-    character(len=*), parameter :: subName = 'calc_partition_precip_freezing: '
-    real(r8), pointer :: Faxa_prec(:) => null()
-    real(r8), pointer :: Faxa_prrn(:) => null()
-    real(r8), pointer :: Faxa_prsn(:) => null()
+    real(r8), pointer :: mean_prec_rate(:) => null()
+    real(r8), pointer :: Sa_tbot(:)        => null()
+    real(r8), pointer :: Faxa_rain(:)      => null()
+    real(r8), pointer :: Faxa_snow(:)      => null()
 
     rc = ESMF_SUCCESS
     
-    call dshr_state_getfldptr(exportState, 'Faxa_prec', fldptr1=Faxa_prec, rc=rc)
+    call dshr_state_getfldptr(exportState, 'mean_prec_rate', fldptr1=mean_prec_rate, allowNullReturn=.false., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    call dshr_state_getfldptr(exportState, 'Faxa_prrn', fldptr1=Faxa_prrn, rc=rc)
+    call dshr_state_getfldptr(exportState, 'Sa_tbot',        fldptr1=Sa_tbot,        allowNullReturn=.false., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    call dshr_state_getfldptr(exportState, 'Faxa_prsn', fldptr1=Faxa_prsn, rc=rc)
+    
+    call dshr_state_getfldptr(exportState, 'Faxa_rain', fldptr1=Faxa_rain, allowNullReturn=.true., rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call dshr_state_getfldptr(exportState, 'Faxa_snow', fldptr1=Faxa_snow, allowNullReturn=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    if (.not. associated(Faxa_prec)) then
-      call shr_log_error(trim(subName)//'ERROR: Faxa_prec required as input for precip partitioning.', rc=rc)
-      if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    end if
-
-    if (associated(Faxa_prec)) then
-      if (associated(Faxa_prrn)) Faxa_prrn(:) = Faxa_prec(:) * 0.5_r8 
-      if (associated(Faxa_prsn)) Faxa_prsn(:) = Faxa_prec(:) * 0.5_r8
-    end if
+    ! Partition based on near-surface Tair wrt freezing
+    if (associated(Faxa_rain)) Faxa_rain(:) = merge(mean_prec_rate(:), 0.0_r8, Sa_tbot(:) >= 273.15_r8)
+    if (associated(Faxa_snow)) Faxa_snow(:) = merge(0.0_r8, mean_prec_rate(:), Sa_tbot(:) >= 273.15_r8)
   end subroutine calc_partition_precip_freezing
 
 end module datm_datamode_ufs_mod
