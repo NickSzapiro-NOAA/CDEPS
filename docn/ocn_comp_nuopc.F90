@@ -188,7 +188,7 @@ contains
   !===============================================================================
   subroutine InitializeAdvertise(gcomp, importState, exportState, clock, rc)
     use shr_nl_mod, only:  shr_nl_find_group_name
-    
+ 
     ! input/output variables
     type(ESMF_GridComp)  :: gcomp
     type(ESMF_State)     :: importState, exportState
@@ -260,7 +260,6 @@ contains
        if(skip_restart_read) bcasttmp(3) = 1
        if(export_all) bcasttmp(4) = 1
        rtmp(1) = sst_constant_value
-       if(export_all) bcasttmp(4) = 1
     endif
 
     ! Broadcast namelist input

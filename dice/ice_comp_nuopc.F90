@@ -182,7 +182,6 @@ contains
     integer           :: bcasttmp(4)
     real(r8)          :: rbcasttmp(3)
     type(ESMF_VM)     :: vm
-    logical           :: isPresent, isSet
     character(len=*),parameter  :: subname=trim(modName)//':(InitializeAdvertise) '
     !-------------------------------------------------------------------------------
 
@@ -241,7 +240,6 @@ contains
        rbcasttmp(1) = flux_swpf
        rbcasttmp(2) = flux_Qmin
        rbcasttmp(3) = flux_Qacc0
-       if(export_all) bcasttmp(4) = 1
     endif
 
     ! broadcast namelist input
